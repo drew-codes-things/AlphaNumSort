@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "alpha-numerical-sorter"
+version = "1.0.0"
+description = "Sort text files alphabetically, numerically, naturally, or by line length."
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "MIT" }
+dependencies = []
+
+[project.scripts]
+alpha-numerical-sorter = "main:main"
+
+[tool.setuptools]
+py-modules = ["main"]
