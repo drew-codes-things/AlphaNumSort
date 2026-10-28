@@ -10,8 +10,15 @@ def clean_path(path):
 
 
 def natural_key(s):
-    """Key for natural/human sort: 'file2' < 'file10'."""
-    return [int(c) if c.isdigit() else c.lower() for c in re.split(r'(\d+)', s)]
+    return [int(c) if c.isdecimal() else c.lower() for c in re.split(r'(\d+)', s)]
+
+
+NUMBER_RE = re.compile(r'(?:(?<!\w)-)?\d+(?:\.\d+)?')
+
+
+def first_number(text):
+    match = NUMBER_RE.search(text)
+    return float(match.group()) if match else float('inf')
 
 
 def list_supported_files(folder, extra_exts=()):
@@ -89,19 +96,7 @@ def sort_lines(lines, mode, reverse, skip_empty, dedupe, capitalise=False):
         lines = sorted(lines, key=lambda x: natural_key(x), reverse=reverse)
 
     elif mode == 'numeric':
-        def num_key(line):
-            """
-            Sort key for numeric mode.
-
-            Lines that contain no number are assigned float('inf') so they
-            always sort to the END in ascending order and to the BEGINNING
-            in descending order. This is intentional: numberless lines are
-            treated as 'beyond the last numeric entry'. If you want them at
-            the start instead, invert the sentinel to float('-inf').
-            """
-            m = re.search(r'-?\d+(\.\d+)?', line)
-            return float(m.group()) if m else float('inf')
-        lines = sorted(lines, key=num_key, reverse=reverse)
+        lines = sorted(lines, key=first_number, reverse=reverse)
 
     elif mode == 'length':
         lines = sorted(lines, key=lambda x: len(x.rstrip()), reverse=reverse)
@@ -110,14 +105,10 @@ def sort_lines(lines, mode, reverse, skip_empty, dedupe, capitalise=False):
 
 
 def cell_key(mode):
-    """Return a sort-key function for a single CSV cell value, matching the line modes."""
-    def numeric(v):
-        m = re.search(r'-?\d+(\.\d+)?', v)
-        return float(m.group()) if m else float('inf')
     return {
         'alpha':   lambda v: v.lower(),
         'natural': natural_key,
-        'numeric': numeric,
+        'numeric': first_number,
         'length':  lambda v: len(v.rstrip()),
     }[mode]
 
@@ -212,7 +203,6 @@ MODE_NAME_MAP = {
 
 
 def run_cli(args):
-    """Non-interactive mode when --file is supplied."""
     input_path = clean_path(args.file)
     if not os.path.isfile(input_path):
         print(f"  Error: file not found: {input_path}")
@@ -237,20 +227,20 @@ def run_cli(args):
         if args.column < 1:
             print("  Error: --column must be 1 or greater.")
             sys.exit(1)
-        sort_csv_by_column(
+        succeeded = sort_csv_by_column(
             input_path, output_path, args.column, mode, reverse,
             args.remove_empty, args.remove_dupes, has_header=not args.no_header,
         )
-        return
-
-    sort_file(
-        input_path, output_path, mode, reverse,
-        args.remove_empty, args.remove_dupes, args.capitalise,
-    )
+    else:
+        succeeded = sort_file(
+            input_path, output_path, mode, reverse,
+            args.remove_empty, args.remove_dupes, args.capitalise,
+        )
+    if not succeeded:
+        sys.exit(1)
 
 
 def run_interactive(extra_exts=()):
-    """Original interactive loop."""
     print("\n  Drew's Alpha-Numerical Sorter")
     print("  " + "-" * 30)
     print("  Tip: run with --file to skip the prompts. See --help for options.")
@@ -375,7 +365,7 @@ def parse_args():
     p.add_argument("--mode",         metavar="MODE",  default="natural",
                    help="Sort mode: alpha | natural | numeric | length (default: natural)")
     p.add_argument("--output",       metavar="PATH",  help="Output file path (default: <input>_sorted.<ext>)")
-    p.add_argument("--order",        metavar="a|d",   default="a",
+    p.add_argument("--order",        metavar="a|d",   default="a", choices=("a", "d"),
                    help="Sort order: a=ascending, d=descending (default: a)")
     p.add_argument("--remove-dupes", action="store_true", help="Remove duplicate lines")
     p.add_argument("--remove-empty", action="store_true", help="Remove empty lines")
