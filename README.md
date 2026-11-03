@@ -105,6 +105,7 @@ After sorting, the tool reports the line count before and after, and how many li
 - Natural sort splits each line on digit boundaries so `file2` < `file10` < `file100`.
 - Deduplication is case-insensitive and strip-based: `Apple` and `apple ` are treated as the same line.
 - The `test-file-gen/` directory contains scripts for generating test files.
+- Run the tests with `pip install pytest` then `python -m pytest tests`.
 
 ---
 

@@ -96,7 +96,8 @@ def sort_lines(lines, mode, reverse, skip_empty, dedupe, capitalise=False):
         lines = sorted(lines, key=lambda x: natural_key(x), reverse=reverse)
 
     elif mode == 'numeric':
-        lines = sorted(lines, key=first_number, reverse=reverse)
+        numbered = sorted((l for l in lines if first_number(l) != float('inf')), key=first_number, reverse=reverse)
+        lines = numbered + [l for l in lines if first_number(l) == float('inf')]
 
     elif mode == 'length':
         lines = sorted(lines, key=lambda x: len(x.rstrip()), reverse=reverse)
@@ -142,7 +143,12 @@ def sort_csv_by_column(input_path, output_path, column, mode, reverse,
             rows = unique
 
         keyf = cell_key(mode)
-        rows.sort(key=lambda r: keyf(cell(r)), reverse=reverse)
+        if mode == 'numeric':
+            numbered = [r for r in rows if first_number(cell(r)) != float('inf')]
+            unnumbered = [r for r in rows if first_number(cell(r)) == float('inf')]
+            rows = sorted(numbered, key=lambda r: keyf(cell(r)), reverse=reverse) + unnumbered
+        else:
+            rows.sort(key=lambda r: keyf(cell(r)), reverse=reverse)
 
         with open(output_path, 'w', encoding='utf-8', newline='') as f:
             writer = csv.writer(f)
