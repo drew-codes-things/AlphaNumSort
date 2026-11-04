@@ -101,13 +101,11 @@ After sorting, the tool reports the line count before and after, and how many li
 
 ## Notes
 
-- Numeric mode assigns `float('inf')` to lines containing no number, so they always appear at the end in ascending order and at the start in descending order.
+- Numeric mode sorts only the lines that contain a number; lines with no number are kept in their original order and always placed at the end, in both ascending and descending order.
 - Natural sort splits each line on digit boundaries so `file2` < `file10` < `file100`.
 - Deduplication is case-insensitive and strip-based: `Apple` and `apple ` are treated as the same line.
 - The `test-file-gen/` directory contains scripts for generating test files.
 - Run the tests with `pip install pytest` then `python -m pytest tests`.
-
----
 
 ---
 
